@@ -1,0 +1,92 @@
+!pip install librosa
+!pip install faiss-cpu
+import librosa  # using for audio extraction
+import faiss # Using faiss for similarity search
+import numpy as np
+import os
+print(os.path.exists("/content/Death Grips - Culture Shock.mp3"))
+print(os.path.exists("/content/Death Grips - Klink.mp3"))
+print(os.path.exists("/content/Death Grips - Lil Boy.mp3"))
+#if it returns true then your file exists, false means check your file path
+# 1.extract features from a song
+def extract_song_features(file_path, sr=22050):
+    """
+    Extracts MFCCs and other acoustic features from an audio file.
+    :param file_path: Path to the audio file.
+    :param sr: Sampling rate.
+    :return: Feature vector of the song.
+    """
+    if not os.path.exists(file_path):
+        print(f"Error: File {file_path} does not exist")
+        return None
+
+    try:
+        y, sr = librosa.load(file_path, sr=sr)  # Load the audio file
+
+        # MFCC (Mel-frequency cepstral coefficients) -speech and audio processing
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+        mfcc_mean = np.mean(mfcc, axis=1)
+
+        # Chroma feature -the energy in each pitch class and is useful for harmonic/musical content
+        chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+        chroma_mean = np.mean(chroma, axis=1)
+
+        # Tempo -the speed (beats per minute) of the music
+        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+
+        # Combine the features into a single vector
+        features = np.hstack([mfcc_mean, chroma_mean, tempo])
+        return features
+    except Exception as e:
+        print(f"Error extracting features from {file_path}: {e}")
+        return None
+
+#Load and vectorize the songs
+song_files = [
+    "/content/Death Grips - Culture Shock.mp3",
+    "/content/Death Grips - Klink.mp3",
+    "/content/Death Grips - Lil Boy.mp3"
+]
+
+song_vectors = []
+valid_files = []
+for file in song_files:
+    features = extract_song_features(file)
+    if features is not None:
+        song_vectors.append(features)
+        valid_files.append(file)  # Keep track of valid files (ones without errors)
+
+#Ensure vectors are non-empty before proceeding
+if not song_vectors:
+    print("No valid song vectors found. Exiting.")
+    exit()
+
+song_vectors = np.array(song_vectors).astype(np.float32)  # Convert to float32
+#Build FAISS index
+dimension = song_vectors.shape[1]  # Correct dimension: Number of features in the vector
+index = faiss.IndexFlatL2(dimension)  # L2 distance is standard for similarity
+index.add(song_vectors)  # Add song vectors to the index
+#getting similar songs based on a query song
+def get_similar_songs(query_file, k=5):
+    """
+    Find k similar songs to the given query song.
+    :param query_file: Path to the query audio file.
+    :param k: Number of similar songs to retrieve.
+    :return: Indices and distances of the top k similar songs.
+    """
+    query_vector = extract_song_features(query_file)
+    if query_vector is None:
+        print(f"Error: Could not extract features from {query_file}")
+        return None, None
+    query_vector = query_vector.reshape(1, -1).astype(np.float32)
+    distances, indices = index.search(query_vector, k)
+    return indices, distances
+#Query for recommendations based on a song
+query_song = "/content/Death Grips - Culture Shock.mp3"
+similar_song_indices, distances = get_similar_songs(query_song)
+if similar_song_indices is not None:
+    print("Query song:", query_song)
+    for i, idx in enumerate(similar_song_indices[0]):
+        print(f"Recommended song {i + 1}: {valid_files[idx]} (Distance: {distances[0][i]})")
+else:
+    print("No recommendations could be made.")
