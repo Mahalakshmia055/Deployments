@@ -1,0 +1,55 @@
+## Overview
+A personalized song recommendation system that utilizes user feedback and rag approach to dynamically suggest songs based on user preferences.
+
+## Features
+- **Feature Extraction (extract_song_features function):**Extracts key audio features from each song file, including MFCC, chroma, and tempo, using the librosa library.
+- **Song Vectorization:** Loads and processes the list of songs, applying the feature extraction function and storing valid songs.
+- **FAISS indexing:** Converts the song feature vectors into a float32 format.
+- **FAISS Index Construction:** Initializes a FAISS index using L2 (Euclidean) distance for song similarity
+- **Similar Song Retrieval (get_similar_songs function): Extracts features from a query song and performs a similarity search against the indexed songs.Returns the indices and distances of the most similar songs to the query.
+
+## Tech Stack
+- **Python:** Programming language used for tasks involving machine learning, audio processing, and data analysis.
+- **Numpy:** A library for numerical computing in Python. It is used for:
+            Data Manipulation: Creating and handling arrays for audio features.
+            Feature Vector Creation: Combining and structuring extracted features into vectors.
+- **Librosa:** A Python library used for music and audio analysis. It's employed here for
+            Loading Audio Files: librosa.load() to read audio files.
+            Feature Extraction: Extracting key audio features such as MFCCs, chroma, and tempo.
+- **FAISS (Facebook AI Similarity Search):** A library from Facebook designed for efficient similarity search and clustering. It is used here for:
+            Indexing: FAISS creates an index of song feature vectors.
+            Searching: Efficiently finds the most similar songs based on the L2 (Euclidean) distance metric.
+- **os Module:** A standard Python module used to interact with the file system. In this case, it's used for:
+            File Path Checking: Verifying if the song files exist before processing.
+
+## Getting Started
+
+### Prerequisites
+- Python 3.6+
+-  Libraries and Dependencies:
+  - NumPy
+  - librosa
+   - FAISS-gpu
+    - Soundfile (optional)
+
+### Input
+Song Files (Audio Files):
+  Format: Common audio file formats like .mp3, .wav, .flac, etc.
+  Path: You need to provide the paths to these song files, either locally or from a cloud storage service.
+  Purpose: These audio files are processed to extract features such as MFCCs, chroma, and tempo, which are then used to create feature vectors representing the songs.2020
+Query Song:
+  Format: Similar to the song files above (e.g., .mp3, .wav).
+Number of Recommendations (k):
+  Type: Integer
+
+### Output
+1.Recommended Songs:
+      Example:
+      Recommended song 1: /content/Mac DeMarco - Rock and Roll Night Club.mp3
+      Recommended song 2: /content/The Soul's Release - Catching Fireflies.mp3
+2.Similarity Distances:
+  Format: A list of distances (typically Euclidean or L2 distances) representing how close each recommended song is to the query song.
+  Purpose: These distances provide a measure of similarity — the smaller the distance, the more similar the songs are
+      Example:
+      Recommended song 1: /content/Mac DeMarco - Rock and Roll Night Club.mp3 (Distance: 12.34)
+      Recommended song 2: /content/The Soul's Release - Catching Fireflies.mp3 (Distance: 15.67)
